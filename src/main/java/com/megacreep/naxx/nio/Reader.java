@@ -59,11 +59,13 @@ public class Reader implements Runnable {
         try {
             System.out.println(Thread.currentThread().getName() + " read ...");
             SocketChannel channel = (SocketChannel) key.channel();
-            ByteBuffer buffer = ByteBuffer.allocate(512);
+            int initCapacity = 512;
+            ByteBuffer buffer = ByteBuffer.allocate(initCapacity);
             int readCount = channel.read(buffer);
             int total = readCount;
-            byte[] bytes = buffer.array();
-            while (readCount == buffer.capacity()) {
+            byte[] bytes = new byte[readCount];
+            System.arraycopy(buffer.array(), 0, bytes, 0, total);
+            while (readCount == initCapacity) {
                 // 读满一个缓存区，再读另一个
                 buffer.clear();
                 readCount = channel.read(buffer);

@@ -7,7 +7,7 @@ public class Start {
 
     public static void main(String[] args) {
         Acceptor acceptor = new Acceptor(8);
-        acceptor.bind(new InetSocketAddress(9999), 3000);
+        acceptor.bind(new InetSocketAddress(8001), 3000);
         acceptor.start();
     }
 }
