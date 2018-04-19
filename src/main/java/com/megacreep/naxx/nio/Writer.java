@@ -11,7 +11,7 @@ public class Writer implements Runnable {
 
     private Selector selector;
 
-    private ConcurrentLinkedQueue<SocketChannel> readed;
+    private ConcurrentLinkedQueue<X> readed;
 
     private static String header = "HTTP/1.1 200\r\n" +
             "Content-Type: text/html;charset=UTF-8\r\n\r\n";
@@ -32,8 +32,9 @@ public class Writer implements Runnable {
             while (true) {
                 int n = selector.select(100);
                 SocketChannel channel = null;
-                while ((channel = readed.poll()) != null) {
-                    registerWrite(channel);
+                X x = null;
+                while ((x = readed.poll()) != null) {
+                    registerWrite(x.channel, x.data);
                 }
                 if (n > 0) {
                     Iterator<SelectionKey> readyKeys = selector.selectedKeys().iterator();
@@ -56,7 +57,9 @@ public class Writer implements Runnable {
         try {
             System.out.println(Thread.currentThread().getName() + " write ...");
             SocketChannel channel = (SocketChannel) key.channel();
-            byte[] response = (header + "\r\nhello\r\n").getBytes();
+            Object data = key.attachment();
+            System.out.println("write key attachment " + data.getClass().getSimpleName());
+            byte[] response = (header + data).getBytes();
             ByteBuffer buffer = ByteBuffer.allocate(response.length);
             buffer.clear();
             buffer.put(response);
@@ -68,19 +71,20 @@ public class Writer implements Runnable {
         }
     }
 
-    public void readed(SocketChannel socketChannel) {
-        readed.offer(socketChannel);
+    public void readed(X x) {
+        readed.offer(x);
         System.out.println("writer  selector.wakeup();");
         selector.wakeup();
     }
 
-    protected void registerWrite(SocketChannel channel) {
+    protected void registerWrite(SocketChannel channel, Object data) {
         try {
             channel.configureBlocking(false);
             channel.socket().setReuseAddress(true);
             channel.socket().setTcpNoDelay(true);
             channel.socket().setKeepAlive(true);
             SelectionKey key = channel.register(selector, SelectionKey.OP_WRITE);
+            key.attach(data);
         } catch (Exception e) {
             e.printStackTrace();
         }

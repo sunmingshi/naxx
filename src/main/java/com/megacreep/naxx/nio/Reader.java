@@ -1,12 +1,13 @@
 package com.megacreep.naxx.nio;
 
-import com.megacreep.naxx.coder.Decoder;
+import com.megacreep.naxx.http.Context;
+import com.megacreep.naxx.http.HttpParser;
+import com.megacreep.naxx.http.HttpRequest;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -44,8 +45,6 @@ public class Reader implements Runnable {
                         if (readyKey.isReadable()) {
                             read(readyKey);
                         }
-                        Decoder.decode(readyKey.attachment());
-                        writer.readed((SocketChannel) readyKey.channel());
                         readyKeys.remove();
                     }
                 }
@@ -74,8 +73,12 @@ public class Reader implements Runnable {
                 bytes = Arrays.copyOf(bytes, bytes.length + readCount);
                 System.arraycopy(buffer.array(), 0, bytes, pos, readCount);
             }
-            ((HashMap<String, Object>) key.attachment()).put("content", bytes);
-            System.out.println("\r\ntotal read count:" + total + ", bytes.length=" + bytes.length);
+            HttpRequest req = HttpParser.parseHttpRequest(bytes);
+            System.out.println("HttpRequest req=" + req);
+            Object result = Context.invoke(req);
+            System.out.println("invoke result=" + result);
+            X x = new X(channel, result);
+            writer.readed(x);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -92,8 +95,7 @@ public class Reader implements Runnable {
             channel.socket().setReuseAddress(true);
             channel.socket().setTcpNoDelay(true);
             channel.socket().setKeepAlive(true);
-            SelectionKey key = channel.register(selector, SelectionKey.OP_READ);
-            key.attach(new HashMap<String, Object>());
+            channel.register(selector, SelectionKey.OP_READ);
         } catch (Exception e) {
             e.printStackTrace();
         }
