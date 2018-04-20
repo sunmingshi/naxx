@@ -1,9 +1,9 @@
 package com.megacreep.naxx.controller;
 
-import com.google.gson.JsonObject;
 import com.megacreep.naxx.api.Controller;
 import com.megacreep.naxx.api.Request;
 import com.megacreep.naxx.http.HttpRequest;
+import java.util.HashMap;
 
 @Controller("/controller")
 public class HelloWorldController {
@@ -13,9 +13,9 @@ public class HelloWorldController {
     }
 
     @Request("/helloworld")
-    public JsonObject hellojson(HttpRequest req) {
-        JsonObject json = new JsonObject();
-        json.addProperty("msg", "hello");
+    public HashMap<String, Object> hellojson(HttpRequest req) {
+        HashMap<String, Object> json = new HashMap<String, Object>();
+        json.put("msg", "hello");
         return json;
     }
 }
