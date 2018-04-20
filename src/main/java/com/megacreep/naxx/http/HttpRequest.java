@@ -1,9 +1,7 @@
 package com.megacreep.naxx.http;
 
 
-import com.megacreep.naxx.nio.Attachment;
-
-public class HttpRequest extends Attachment {
+public class HttpRequest {
 
     public HttpRequest() {
         this.header = new Header();
