@@ -8,10 +8,14 @@ import java.util.HashMap;
 public class Context {
 
     private static HashMap<String, Method> uriMapping = new HashMap<>();
-    private static HashMap<String, Controller> uriMapping2 = new HashMap<>();
+    private static HashMap<String, Object> uriMapping2 = new HashMap<>();
 
-    public static void register(Controller c) {
+    public static void register(Object c) {
         String name = c.getClass().getSimpleName().toLowerCase();
+        Controller controller = c.getClass().getAnnotation(Controller.class);
+        if (controller != null) {
+            name = controller.value();
+        }
         if (!name.startsWith("/")) {
             name = "/" + name;
         }

@@ -5,7 +5,8 @@ import com.megacreep.naxx.api.Controller;
 import com.megacreep.naxx.api.Request;
 import com.megacreep.naxx.http.HttpRequest;
 
-public class HelloWorldController extends Controller {
+@Controller("/controller")
+public class HelloWorldController {
 
     public String hello(HttpRequest req) {
         return "hello";
