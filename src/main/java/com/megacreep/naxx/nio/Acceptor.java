@@ -66,14 +66,14 @@ public class Acceptor implements Runnable {
         }
     }
 
-    public synchronized void bind(InetSocketAddress bindAddress, int ioTimeoutMillis) {
+    public synchronized void bind(InetSocketAddress addr, int timeout) {
         try {
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.socket().setReuseAddress(true);
-            serverSocketChannel.socket().bind(bindAddress, SOCKET_BACKLOG);
+            serverSocketChannel.socket().bind(addr, SOCKET_BACKLOG);
             SelectionKey key = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            key.attach(ioTimeoutMillis != 0 ? ioTimeoutMillis : DEFAULT_IO_TIMEOUT_MILLIS);
+            key.attach(timeout != 0 ? timeout : DEFAULT_IO_TIMEOUT_MILLIS);
         } catch (Exception e) {
             e.printStackTrace();
         }

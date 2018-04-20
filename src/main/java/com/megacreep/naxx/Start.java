@@ -5,6 +5,9 @@ import com.megacreep.naxx.http.Context;
 import com.megacreep.naxx.nio.Acceptor;
 import java.net.InetSocketAddress;
 
+/**
+ * 启动类
+ */
 public class Start {
 
     public static void main(String[] args) {
