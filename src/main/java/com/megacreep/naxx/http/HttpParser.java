@@ -1,6 +1,5 @@
 package com.megacreep.naxx.http;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -93,9 +92,9 @@ public class HttpParser {
                         String kvs = new String(hbytes);
                         String[] kv = kvs.split(": ");
                         header.put(kv[0], kv[1]);
+                    } else {
+                        break;
                     }
-                } else {
-                    break;
                 }
             }
         }
