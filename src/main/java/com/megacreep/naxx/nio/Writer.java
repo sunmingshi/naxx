@@ -28,8 +28,8 @@ public class Writer implements Runnable {
 
     @Override
     public void run() {
-        try {
-            while (true) {
+        while (true) {
+            try {
                 int n = selector.select(100);
                 SocketChannel channel = null;
                 X x = null;
@@ -47,9 +47,9 @@ public class Writer implements Runnable {
                         readyKeys.remove();
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -68,6 +68,11 @@ public class Writer implements Runnable {
             channel.close();
         } catch (Exception e) {
             e.printStackTrace();
+            try {
+                key.channel().close();
+            } catch (Exception e1) {
+                // ignored close exception
+            }
         }
     }
 
@@ -87,6 +92,11 @@ public class Writer implements Runnable {
             key.attach(data);
         } catch (Exception e) {
             e.printStackTrace();
+            try {
+                channel.close();
+            } catch (Exception e1) {
+                // ignored close exception
+            }
         }
     }
 }

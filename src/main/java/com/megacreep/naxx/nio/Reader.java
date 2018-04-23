@@ -3,6 +3,7 @@ package com.megacreep.naxx.nio;
 import com.megacreep.naxx.http.Context;
 import com.megacreep.naxx.http.HttpParser;
 import com.megacreep.naxx.http.HttpRequest;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -30,8 +31,8 @@ public class Reader implements Runnable {
     }
 
     public void run() {
-        try {
-            while (true) {
+        while (true) {
+            try {
                 int n = selector.select(100);
                 SocketChannel channel = null;
                 while ((channel = accepted.poll()) != null) {
@@ -48,9 +49,9 @@ public class Reader implements Runnable {
                         readyKeys.remove();
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -81,6 +82,11 @@ public class Reader implements Runnable {
             writer.readed(x);
         } catch (Exception e) {
             e.printStackTrace();
+            try {
+                key.channel().close();
+            } catch (IOException e1) {
+                // ignored close exception
+            }
         }
     }
 
@@ -98,6 +104,11 @@ public class Reader implements Runnable {
             channel.register(selector, SelectionKey.OP_READ);
         } catch (Exception e) {
             e.printStackTrace();
+            try {
+                channel.close();
+            } catch (IOException e1) {
+                // ignored close exception
+            }
         }
     }
 }
