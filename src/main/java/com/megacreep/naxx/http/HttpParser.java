@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 /**
  * 请求行和标题必须以<CR><LF>作为结尾。空行内必须只有<CR><LF>而无其他空格。在HTTP/1.1协议中，所有的请求头，除Host外，都是可选的。
- * 测试数据换行为 <LF>
  * 结合Reader优化为流式解析http报文，放弃对 multipart 的支持
  */
 public class HttpParser {
