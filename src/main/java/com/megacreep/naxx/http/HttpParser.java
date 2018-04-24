@@ -40,9 +40,7 @@ public class HttpParser {
                 byte[] bpath = new byte[byteArray.pos - pos - 1];// 不要空格
                 System.arraycopy(bytes, pos, bpath, 0, bpath.length);
                 System.out.println(new String(bpath));
-                String path = new String(bpath);
-                String[] pathParam = path.split("\\?");
-                return pathParam[0];
+                return new String(bpath);
             }
         }
         return "UNKNOWN";
@@ -53,6 +51,15 @@ public class HttpParser {
         if (path.contains("?")) {
             String[] parts = path.split("\\?");
             System.out.println(Arrays.toString(parts));
+            if (parts.length > 1) {
+                String params = parts[1];
+                String[] kvs = params.split("&");
+                for (String temp : kvs) {
+                    System.out.println("parseParam " + temp);
+                    String[] kv = temp.split("=");
+                    p.put(kv[0], kv[1]);
+                }
+            }
         }
         return p;
     }
@@ -112,10 +119,12 @@ public class HttpParser {
         ByteArray byteArray = new ByteArray(bytes, 0);
         HttpRequest httpRequest = new HttpRequest();
         httpRequest.setMethod(parseMethod(byteArray));
-        httpRequest.setUri(parsePath(byteArray));
+        String uri = parsePath(byteArray);
+        httpRequest.setUri(uri.split("\\?")[0]);
         httpRequest.setVersion(parseVersion(byteArray));
         httpRequest.setHeader(parseHeaders(byteArray));
         httpRequest.setBody(parseBody(byteArray));
+        httpRequest.setParam(parseParam(uri));
         return httpRequest;
     }
 }

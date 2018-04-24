@@ -13,8 +13,11 @@ public class Writer implements Runnable {
 
     private ConcurrentLinkedQueue<X> readed;
 
-    private static String header = "HTTP/1.1 200\r\n" +
-            "Content-Type: text/html;charset=UTF-8\r\n\r\n";
+    private static String version = "HTTP/1.1 200";
+
+    private static String header = "Content-Type: text/html;charset=UTF-8";
+
+    private static String crlf = "\r\n";
 
     public Writer(int num) {
         try {
@@ -59,7 +62,7 @@ public class Writer implements Runnable {
             SocketChannel channel = (SocketChannel) key.channel();
             Object data = key.attachment();
             System.out.println("write key attachment " + data.getClass().getSimpleName());
-            byte[] response = (header + data).getBytes();
+            byte[] response = (version + crlf + header + crlf + crlf + data).getBytes();
             ByteBuffer buffer = ByteBuffer.allocate(response.length);
             buffer.clear();
             buffer.put(response);
@@ -78,7 +81,7 @@ public class Writer implements Runnable {
 
     public void readed(X x) {
         readed.offer(x);
-        System.out.println("writer  selector.wakeup();");
+        System.out.println("writer selector.wakeup();");
         selector.wakeup();
     }
 
