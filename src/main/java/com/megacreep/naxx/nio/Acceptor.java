@@ -1,5 +1,6 @@
 package com.megacreep.naxx.nio;
 
+import com.megacreep.naxx.http.HttpDecoder;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -31,7 +32,7 @@ public class Acceptor implements Runnable {
             started = false;
             for (int i = 0; i < handlers; i++) {
                 writer = new Writer(i);
-                reader = new Reader(i, writer);
+                reader = new Reader(i, new HttpDecoder());
                 writers[i] = writer;
                 readers[i] = reader;
             }

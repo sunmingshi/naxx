@@ -1,8 +1,6 @@
 package com.megacreep.naxx.nio;
 
-import com.megacreep.naxx.http.Context;
-import com.megacreep.naxx.http.HttpParser;
-import com.megacreep.naxx.http.HttpRequest;
+import com.megacreep.naxx.api.Decoder;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -18,10 +16,11 @@ public class Reader implements Runnable {
     private Selector selector;
     private ConcurrentLinkedQueue<SocketChannel> accepted;
     private Writer writer;
+    private Decoder decoder;
 
-    public Reader(int num, Writer writer) {
+    public Reader(int num, Decoder decoder) {
         try {
-            this.writer = writer;
+            this.decoder = decoder;
             selector = Selector.open();
             accepted = new ConcurrentLinkedQueue<>();
             new Thread(this, "Reader-" + num).start();
@@ -74,9 +73,7 @@ public class Reader implements Runnable {
                 bytes = Arrays.copyOf(bytes, bytes.length + readCount);
                 System.arraycopy(buffer.array(), 0, bytes, pos, readCount);
             }
-            HttpRequest req = HttpParser.parseHttpRequest(bytes);
-            System.out.println("HttpRequest req=" + req);
-            Object result = Context.invoke(req);
+            Object result = decoder.decode(bytes);
             System.out.println("invoke result=" + result);
             X x = new X(channel, result);
             writer.readed(x);
