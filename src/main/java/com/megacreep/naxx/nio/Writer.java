@@ -13,6 +13,8 @@ public class Writer implements Runnable {
 
     private ConcurrentLinkedQueue<X> readed;
 
+    Reader reader;
+
     private static String version = "HTTP/1.1 200";
 
     private static String header = "Content-Type: text/html;charset=UTF-8";
@@ -68,7 +70,7 @@ public class Writer implements Runnable {
             buffer.put(response);
             buffer.rewind();
             channel.write(buffer);
-            channel.close();
+            reader.accepted((SocketChannel) key.channel());
         } catch (Exception e) {
             e.printStackTrace();
             try {

@@ -15,7 +15,7 @@ public class Reader implements Runnable {
 
     private Selector selector;
     private ConcurrentLinkedQueue<SocketChannel> accepted;
-    private Writer writer;
+    Writer writer;
     private Decoder decoder;
 
     public Reader(int num, Decoder decoder) {
