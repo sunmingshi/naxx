@@ -1,7 +1,6 @@
 package com.megacreep.naxx.nio;
 
 import com.megacreep.naxx.api.Decoder;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -13,54 +12,61 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Reader implements Runnable {
 
+
     private Selector selector;
-    private ConcurrentLinkedQueue<SocketChannel> accepted;
-    Writer writer;
+    private ConcurrentLinkedQueue<SocketChannel> toRead;
     private Decoder decoder;
+    public Writer writer;
 
     public Reader(int num, Decoder decoder) {
         try {
             this.decoder = decoder;
+            toRead = new ConcurrentLinkedQueue<>();
             selector = Selector.open();
-            accepted = new ConcurrentLinkedQueue<>();
             new Thread(this, "Reader-" + num).start();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public void run() {
-        while (true) {
-            try {
-                int n = selector.select(100);
+        try {
+            while (true) {
+                int n = selector.select(10);
                 SocketChannel channel = null;
-                while ((channel = accepted.poll()) != null) {
+                while ((channel = toRead.poll()) != null) {
                     registerRead(channel);
                 }
                 if (n > 0) {
-                    Iterator<SelectionKey> readyKeys = selector.selectedKeys().iterator();
-                    SelectionKey readyKey = null;
-                    while (readyKeys.hasNext()) {
-                        readyKey = readyKeys.next();
-                        if (readyKey.isReadable()) {
-                            read(readyKey);
+                    Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+                    SelectionKey key = null;
+                    while (keys.hasNext()) {
+                        key = keys.next();
+                        if (key.isReadable()) {
+                            read(key);
                         }
-                        readyKeys.remove();
+                        keys.remove();
                     }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
     private void read(SelectionKey key) {
         try {
-            System.out.println(Thread.currentThread().getName() + " read ...");
             SocketChannel channel = (SocketChannel) key.channel();
+            System.out.println("read " + channel.hashCode());
             int initCapacity = 512;
             ByteBuffer buffer = ByteBuffer.allocate(initCapacity);
             int readCount = channel.read(buffer);
+            // 读取为空
+            if (readCount < 0) {
+                key.cancel();
+                return;
+            }
             int total = readCount;
             byte[] bytes = new byte[readCount];
             System.arraycopy(buffer.array(), 0, bytes, 0, total);
@@ -73,23 +79,18 @@ public class Reader implements Runnable {
                 bytes = Arrays.copyOf(bytes, bytes.length + readCount);
                 System.arraycopy(buffer.array(), 0, bytes, pos, readCount);
             }
-            Object result = decoder.decode(bytes);
-            System.out.println("invoke result=" + result);
-            X x = new X(channel, result);
-            writer.readed(x);
+            key.cancel();
+            Object data = decoder.decode(bytes);
+            Session s = new Session(channel, data);
+            writer.offerWrite(s);
         } catch (Exception e) {
             e.printStackTrace();
-            try {
-                key.channel().close();
-            } catch (IOException e1) {
-                // ignored close exception
-            }
+            Closer.close(key.channel());
         }
     }
 
-    public void accepted(SocketChannel socketChannel) {
-        accepted.offer(socketChannel);
-        selector.wakeup();
+    public void offerRead(SocketChannel socketChannel) {
+        toRead.offer(socketChannel);
     }
 
     protected void registerRead(SocketChannel channel) {
@@ -101,11 +102,6 @@ public class Reader implements Runnable {
             channel.register(selector, SelectionKey.OP_READ);
         } catch (Exception e) {
             e.printStackTrace();
-            try {
-                channel.close();
-            } catch (IOException e1) {
-                // ignored close exception
-            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.megacreep.naxx.nio;
 
+import com.megacreep.naxx.api.Encoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -8,24 +9,18 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Writer implements Runnable {
-
     private Selector selector;
+    private ConcurrentLinkedQueue<Session> toWrite;
+    private Encoder encoder;
+    public Reader reader;
 
-    private ConcurrentLinkedQueue<X> readed;
-
-    Reader reader;
-
-    private static String version = "HTTP/1.1 200";
-
-    private static String header = "Content-Type: text/html;charset=UTF-8";
-
-    private static String crlf = "\r\n";
-
-    public Writer(int num) {
+    public Writer(int num, Encoder encoder) {
         try {
+            this.encoder = encoder;
+            toWrite = new ConcurrentLinkedQueue<>();
             selector = Selector.open();
-            readed = new ConcurrentLinkedQueue<>();
             new Thread(this, "Writer-" + num).start();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -35,11 +30,10 @@ public class Writer implements Runnable {
     public void run() {
         while (true) {
             try {
-                int n = selector.select(100);
-                SocketChannel channel = null;
-                X x = null;
-                while ((x = readed.poll()) != null) {
-                    registerWrite(x.channel, x.data);
+                int n = selector.select(10);
+                Session t = null;
+                while ((t = toWrite.poll()) != null) {
+                    registerWrite(t.channel, t.data);
                 }
                 if (n > 0) {
                     Iterator<SelectionKey> readyKeys = selector.selectedKeys().iterator();
@@ -60,17 +54,17 @@ public class Writer implements Runnable {
 
     private void write(SelectionKey key) {
         try {
-            System.out.println(Thread.currentThread().getName() + " write ...");
             SocketChannel channel = (SocketChannel) key.channel();
+            System.out.println("write " + channel.hashCode());
             Object data = key.attachment();
-            System.out.println("write key attachment " + data.getClass().getSimpleName());
-            byte[] response = (version + crlf + header + crlf + crlf + data).getBytes();
+            byte[] response = encoder.encode(data);
             ByteBuffer buffer = ByteBuffer.allocate(response.length);
-            buffer.clear();
             buffer.put(response);
             buffer.rewind();
             channel.write(buffer);
-            reader.accepted((SocketChannel) key.channel());
+            System.out.println("write finish");
+            key.cancel();
+            reader.registerRead(channel);
         } catch (Exception e) {
             e.printStackTrace();
             try {
@@ -81,10 +75,8 @@ public class Writer implements Runnable {
         }
     }
 
-    public void readed(X x) {
-        readed.offer(x);
-        System.out.println("writer selector.wakeup();");
-        selector.wakeup();
+    public void offerWrite(Session s) {
+        toWrite.offer(s);
     }
 
     protected void registerWrite(SocketChannel channel, Object data) {
@@ -93,15 +85,11 @@ public class Writer implements Runnable {
             channel.socket().setReuseAddress(true);
             channel.socket().setTcpNoDelay(true);
             channel.socket().setKeepAlive(true);
-            SelectionKey key = channel.register(selector, SelectionKey.OP_WRITE);
-            key.attach(data);
+            SelectionKey k = channel.register(selector, SelectionKey.OP_WRITE);
+            k.attach(data);
         } catch (Exception e) {
             e.printStackTrace();
-            try {
-                channel.close();
-            } catch (Exception e1) {
-                // ignored close exception
-            }
+            Closer.close(channel);
         }
     }
 }
