@@ -2,6 +2,7 @@ package com.megacreep.naxx.nio;
 
 import com.megacreep.naxx.api.Decoder;
 import com.megacreep.naxx.api.Encoder;
+
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -63,7 +64,7 @@ public class Acceptor implements Runnable {
         }
     }
 
-    public synchronized void bind(InetSocketAddress bindAddress) {
+    public synchronized Acceptor bind(InetSocketAddress bindAddress) {
         try {
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
             serverSocketChannel.configureBlocking(false);
@@ -73,17 +74,18 @@ public class Acceptor implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return this;
     }
 
-    public synchronized void start() {
+    public synchronized Acceptor start() {
         try {
-            if (started) {
-                return;
+            if (!started) {
+                new Thread(this, "Acceptor").start();
+                started = true;
             }
-            started = true;
-            new Thread(this, "Acceptor").start();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return this;
     }
 }
